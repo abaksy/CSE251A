@@ -1,5 +1,6 @@
 from dataloader import MNISTDataLoader
 from knn import KNearestNeighbours
+from datasampler import RandomSampler, RandomClassSampler, ProportionalRandomClassSampler
 import os
 import time
 
@@ -14,13 +15,20 @@ if __name__ == '__main__':
     data_loader = MNISTDataLoader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 
     (x_train, y_train), (x_test, y_test) = data_loader.read_data()
-
+    print("Before sampling:")
     print("TRAIN:", len(x_train), len(y_train))
 
     print("TEST:", len(x_test), len(y_test))
 
+    rs = ProportionalRandomClassSampler(1000)
+
+    x_train_1, y_train_1 = rs.sample_data(x_train, y_train)
+    
+    print("After sampling:")
+    print("TRAIN:", len(x_train_1), len(y_train_1))
+
     model = KNearestNeighbours(1)
-    model.fit(x_train, y_train)
+    model.fit(x_train_1, y_train_1)
 
     start = time.perf_counter()
 
@@ -30,5 +38,5 @@ if __name__ == '__main__':
 
     acc = model.accuracy(y_hat, y_test)
 
-    print("Accuracy with basic 1-NN:", acc, " time taken", end-start)
+    print("Accuracy of 1-NN Model:", acc, " time taken", end-start)
 
