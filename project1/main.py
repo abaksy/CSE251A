@@ -1,6 +1,6 @@
 from dataloader import MNISTDataLoader
 from knn import KNearestNeighbours
-from datasampler import RandomSampler, RandomClassSampler, ProportionalRandomClassSampler
+from datasampler import KMeansSampler
 import os
 from testbench import TestBench
 
@@ -15,12 +15,7 @@ if __name__ == '__main__':
     data_loader = MNISTDataLoader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 
     (x_train, y_train), (x_test, y_test) = data_loader.read_data()
-    print("Before sampling:")
-    print("TRAIN:", len(x_train), len(y_train))
-
-    print("TEST:", len(x_test), len(y_test))
-
-    rs = ProportionalRandomClassSampler(1000)
+    rs = KMeansSampler(1000)
 
     model = KNearestNeighbours(1)
     

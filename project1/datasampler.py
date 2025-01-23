@@ -1,7 +1,9 @@
 from abc import abstractmethod, ABC
 import random
 from collections import Counter
-
+from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import euclidean_distances
+import numpy as np
 
 class DataSampler(ABC):
     """
@@ -102,3 +104,37 @@ class ProportionalRandomClassSampler(DataSampler):
         x_train_samples = [x[0] for x in train_samples]
         y_train_samples = [x[1] for x in train_samples]
         return (x_train_samples, y_train_samples)
+
+
+class KMeansSampler(DataSampler):
+    def __init__(self, M: int):
+        super().__init__(M)
+    
+    def sample_data(self, x_train: list, y_train: list):
+        
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+        cluster_model = KMeans(n_clusters=self.M)
+
+        cluster_model.fit(x_train, y_train)
+        # Get distances from each point to each centroid
+        distances = euclidean_distances(x_train, cluster_model.cluster_centers_)
+        
+        # For each cluster, find the point closest to its centroid
+        sampled_indices = []
+        for cluster_idx in range(self.M):
+            # Get points assigned to this cluster
+            cluster_points = np.where(cluster_model.labels_ == cluster_idx)[0]
+            
+            # Find the point closest to the centroid
+            closest_point_idx = cluster_points[
+                np.argmin(distances[cluster_points, cluster_idx])
+            ]
+            sampled_indices.append(closest_point_idx)
+        
+        # Convert to numpy array for easier indexing
+        sampled_indices = np.array(sampled_indices)
+        
+        return x_train[sampled_indices], y_train[sampled_indices]
+
+
