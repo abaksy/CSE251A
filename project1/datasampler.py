@@ -17,7 +17,7 @@ class DataSampler(ABC):
         self.M = M
 
     @abstractmethod
-    def sample_data(self, M: int, x_train: list, y_train: list):
+    def sample_data(self, x_train: list, y_train: list):
         pass
 
 

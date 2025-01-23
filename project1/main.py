@@ -2,7 +2,7 @@ from dataloader import MNISTDataLoader
 from knn import KNearestNeighbours
 from datasampler import RandomSampler, RandomClassSampler, ProportionalRandomClassSampler
 import os
-import time
+from testbench import TestBench
 
 if __name__ == '__main__':
     base_path = 'dataset'
@@ -22,21 +22,12 @@ if __name__ == '__main__':
 
     rs = ProportionalRandomClassSampler(1000)
 
-    x_train_1, y_train_1 = rs.sample_data(x_train, y_train)
-    
-    print("After sampling:")
-    print("TRAIN:", len(x_train_1), len(y_train_1))
-
     model = KNearestNeighbours(1)
-    model.fit(x_train_1, y_train_1)
+    
+    test_bench = TestBench(model, rs)
 
-    start = time.perf_counter()
+    results = test_bench.run_pipeline(1, x_train, y_train, x_test, y_test)
 
-    y_hat = model.predict(x_test)
-
-    end = time.perf_counter()
-
-    acc = model.accuracy(y_hat, y_test)
-
-    print("Accuracy of 1-NN Model:", acc, " time taken", end-start)
+    for a, tt in results:
+        print(f"Accuracy: {a}, Time Taken: {tt} s")
 
