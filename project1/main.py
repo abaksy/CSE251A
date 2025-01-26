@@ -1,8 +1,9 @@
 from dataloader import MNISTDataLoader
 from knn import KNearestNeighbours
-from datasampler import KMeansSampler
+from datasampler import *
 import os
 from testbench import TestBench
+import pprint
 
 if __name__ == '__main__':
     base_path = 'dataset'
@@ -15,14 +16,17 @@ if __name__ == '__main__':
     data_loader = MNISTDataLoader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 
     (x_train, y_train), (x_test, y_test) = data_loader.read_data()
-    rs = KMeansSampler(1000)
 
     model = KNearestNeighbours(1)
-    
-    test_bench = TestBench(model, rs)
 
-    results = test_bench.run_pipeline(2, x_train, y_train, x_test, y_test)
+    Ms = [1000, 5000, 10_000, 20_000, 30_000]
+    samplers = [RandomSampler, RandomClassSampler, ProportionalRandomClassSampler, KMeansSampler, HierarchicalKMeansSampler]
 
-    # for a, tt in results:
-    #     print(f"Accuracy: {a}, Time Taken: {tt} s")
-
+    for sampler in samplers:
+        for M in Ms:
+            rs = sampler(M)
+            print(f"Testing {rs.name} sampler with {M} samples")
+            test_bench = TestBench(model, rs)
+            print("Running inference on test set!")
+            results = test_bench.run_pipeline(30, x_train, y_train, x_test, y_test)
+            pprint.pprint(results[1])

@@ -57,8 +57,6 @@ class KNearestNeighbours:
         '''
         labels = list()
         for i, sample in enumerate(test_imgs):
-            if (i)%1000 == 0:
-                print(i)
             label, _ = self.predict_instance(sample)
             labels.append(label)
         return labels

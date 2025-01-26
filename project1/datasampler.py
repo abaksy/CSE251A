@@ -116,7 +116,9 @@ class KMeansSampler(DataSampler):
         self.name = "KMeansSampler"
     
     def sample_data(self, x_train: list, y_train: list):
-        
+        assert len(x_train) == len(y_train)
+        assert self.M <= len(x_train)
+
         x_train = np.array(x_train)
         y_train = np.array(y_train)
         cluster_model = KMeans(n_clusters=self.M)
@@ -148,4 +150,44 @@ class HierarchicalKMeansSampler(DataSampler):
         self.name = "HierarchicalKMeansSampler"
 
     def sample_data(self, x_train, y_train):
-        pass
+        assert len(x_train) == len(y_train)
+        assert self.M <= len(x_train)
+
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+
+        classes = set(y_train)
+        n_classes = len(classes)
+
+        x_samples = list()
+        y_samples = list()
+
+        for c in classes:
+            indices = np.where(y_train == c)
+            x = x_train[indices]
+            y = y_train[indices]
+            
+            K = self.M//n_classes
+            cluster_model = KMeans(K)
+            cluster_model.fit(x, y)
+            
+            sampled_indices = []
+            distances = euclidean_distances(x, cluster_model.cluster_centers_)
+            for cluster_idx in range(K):
+                # Get points assigned to this cluster
+                cluster_points = np.where(cluster_model.labels_ == cluster_idx)[0]
+                
+                # Find the point closest to the centroid
+                closest_point_idx = cluster_points[
+                    np.argmin(distances[cluster_points, cluster_idx])
+                ]
+                sampled_indices.append(closest_point_idx)
+            
+            # Convert to numpy array for easier indexing
+            sampled_indices = np.array(sampled_indices)
+            x_samples.append(x[sampled_indices])
+            y_samples.append(y[sampled_indices])
+            
+        return np.concatenate(x_samples), np.concatenate(y_samples)
+
+
