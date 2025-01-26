@@ -17,6 +17,7 @@ class DataSampler(ABC):
     def __init__(self, M: int):
         super().__init__()
         self.M = M
+        self.name = ""
 
     @abstractmethod
     def sample_data(self, x_train: list, y_train: list):
@@ -30,6 +31,7 @@ class RandomSampler(DataSampler):
 
     def __init__(self, M: int):
         super().__init__(M)
+        self.name = "RandomSampler"
 
     def sample_data(self, x_train: list, y_train: list):
         """
@@ -51,6 +53,7 @@ class RandomClassSampler(DataSampler):
 
     def __init__(self, M: int):
         super().__init__(M)
+        self.name = "RandomClassSampler"
 
     def sample_data(self, x_train: list, y_train: list):
         """
@@ -79,6 +82,7 @@ class ProportionalRandomClassSampler(DataSampler):
 
     def __init__(self, M: int):
         super().__init__(M)
+        self.name = "PropRandomSampler"
 
     def sample_data(self, x_train: list, y_train: list):
         """ """
@@ -109,6 +113,7 @@ class ProportionalRandomClassSampler(DataSampler):
 class KMeansSampler(DataSampler):
     def __init__(self, M: int):
         super().__init__(M)
+        self.name = "KMeansSampler"
     
     def sample_data(self, x_train: list, y_train: list):
         
@@ -137,4 +142,10 @@ class KMeansSampler(DataSampler):
         
         return x_train[sampled_indices], y_train[sampled_indices]
 
+class HierarchicalKMeansSampler(DataSampler):
+    def __init__(self, M: int):
+        super().__init__(M)
+        self.name = "HierarchicalKMeansSampler"
 
+    def sample_data(self, x_train, y_train):
+        pass

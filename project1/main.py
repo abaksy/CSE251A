@@ -21,8 +21,8 @@ if __name__ == '__main__':
     
     test_bench = TestBench(model, rs)
 
-    results = test_bench.run_pipeline(1, x_train, y_train, x_test, y_test)
+    results = test_bench.run_pipeline(2, x_train, y_train, x_test, y_test)
 
-    for a, tt in results:
-        print(f"Accuracy: {a}, Time Taken: {tt} s")
+    # for a, tt in results:
+    #     print(f"Accuracy: {a}, Time Taken: {tt} s")
 

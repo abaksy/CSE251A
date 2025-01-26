@@ -52,7 +52,6 @@ class MNISTDataLoader:
             images.append(np.zeros(rows*cols))
         for i in range(size):
             img = np.array(image_data[i * rows * cols : (i + 1) * rows * cols])
-            # img = img.reshape(28, 28)
             images[i][:] = img
 
         return images, labels
