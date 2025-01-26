@@ -3,7 +3,6 @@ from knn import KNearestNeighbours
 from datasampler import *
 import os
 from testbench import TestBench
-import pprint
 
 if __name__ == '__main__':
     base_path = 'dataset'
@@ -16,11 +15,12 @@ if __name__ == '__main__':
     data_loader = MNISTDataLoader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 
     (x_train, y_train), (x_test, y_test) = data_loader.read_data()
+    print(x_train[0].shape, y_train[0])
 
     model = KNearestNeighbours(1)
 
-    Ms = [1000, 5000, 10_000, 20_000, 30_000]
-    samplers = [RandomSampler, RandomClassSampler, ProportionalRandomClassSampler, KMeansSampler, HierarchicalKMeansSampler]
+    Ms = [ 5000, 10000, 20000, 30000]
+    samplers = [HierarchicalKMeansSampler] #, HierarchicalKMeansSampler]
 
     for sampler in samplers:
         for M in Ms:
@@ -29,4 +29,4 @@ if __name__ == '__main__':
             test_bench = TestBench(model, rs)
             print("Running inference on test set!")
             results = test_bench.run_pipeline(30, x_train, y_train, x_test, y_test)
-            pprint.pprint(results[1])
+            print(f"Accuracy: {results[1]["mean"]}")

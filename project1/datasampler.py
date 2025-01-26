@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 import random
 from collections import Counter
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
 
@@ -39,9 +39,12 @@ class RandomSampler(DataSampler):
         """
         assert len(x_train) == len(y_train)
         assert self.M <= len(x_train)
-        train_samples = random.sample(list(zip(x_train, y_train)), self.M)
-        x_train_samples = [x[0] for x in train_samples]
-        y_train_samples = [x[1] for x in train_samples]
+
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+        indices = np.random.choice(x_train.shape[0], self.M, replace=False)  
+        x_train_samples = x_train[indices]
+        y_train_samples = y_train[indices]
         return (x_train_samples, y_train_samples)
 
 
@@ -65,13 +68,22 @@ class RandomClassSampler(DataSampler):
 
         classes = set(y_train)
         N = len(classes)
-        train_samples = list()
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+
+        x_train_samples = list()
+        y_train_samples = list()
+        
         for cl in classes:
-            filtered = [(x, y) for x, y in zip(x_train, y_train) if y == cl]
-            train_samples.extend(random.sample(filtered, self.M // N))
-        x_train_samples = [x[0] for x in train_samples]
-        y_train_samples = [x[1] for x in train_samples]
-        return (x_train_samples, y_train_samples)
+            class_idx = np.where(y_train == cl)
+            x = x_train[class_idx]
+            y = y_train[class_idx]
+
+            sample_idx = np.random.choice(x.shape[0], self.M//N, replace=False)
+            x_train_samples.append(x[sample_idx])
+            y_train_samples.append(y[sample_idx])
+
+        return (np.concatenate(x_train_samples), np.concatenate(y_train_samples))
 
 
 class ProportionalRandomClassSampler(DataSampler):
@@ -86,6 +98,9 @@ class ProportionalRandomClassSampler(DataSampler):
 
     def sample_data(self, x_train: list, y_train: list):
         """ """
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+
         assert len(x_train) == len(y_train)
         assert self.M <= len(x_train)
 
@@ -100,14 +115,20 @@ class ProportionalRandomClassSampler(DataSampler):
             difference = self.M - num_samples
             most_frequent_class = max(dataset_freq.items(), key=lambda x: x[1])[0]
             sample_freq[most_frequent_class] += difference
-
-        train_samples = list()
+        
+        x_train_samples = list()
+        y_train_samples = list()
+        
         for cl in classes:
-            filtered = [(x, y) for x, y in zip(x_train, y_train) if y == cl]
-            train_samples.extend(random.sample(filtered, sample_freq[cl]))
-        x_train_samples = [x[0] for x in train_samples]
-        y_train_samples = [x[1] for x in train_samples]
-        return (x_train_samples, y_train_samples)
+            class_idx = np.where(y_train == cl)
+            x = x_train[class_idx]
+            y = y_train[class_idx]
+
+            sample_idx = np.random.choice(x.shape[0], sample_freq[cl], replace=False)
+            x_train_samples.append(x[sample_idx])
+            y_train_samples.append(y[sample_idx])
+
+        return (np.concatenate(x_train_samples), np.concatenate(y_train_samples))
 
 
 class KMeansSampler(DataSampler):
@@ -121,7 +142,7 @@ class KMeansSampler(DataSampler):
 
         x_train = np.array(x_train)
         y_train = np.array(y_train)
-        cluster_model = KMeans(n_clusters=self.M)
+        cluster_model = MiniBatchKMeans(n_clusters=self.M, batch_size=4096)
 
         cluster_model.fit(x_train, y_train)
         # Get distances from each point to each centroid
@@ -132,7 +153,8 @@ class KMeansSampler(DataSampler):
         for cluster_idx in range(self.M):
             # Get points assigned to this cluster
             cluster_points = np.where(cluster_model.labels_ == cluster_idx)[0]
-            
+            if cluster_points.shape[0] == 0:
+                continue
             # Find the point closest to the centroid
             closest_point_idx = cluster_points[
                 np.argmin(distances[cluster_points, cluster_idx])
@@ -168,7 +190,7 @@ class HierarchicalKMeansSampler(DataSampler):
             y = y_train[indices]
             
             K = self.M//n_classes
-            cluster_model = KMeans(K)
+            cluster_model = MiniBatchKMeans(K)
             cluster_model.fit(x, y)
             
             sampled_indices = []
@@ -176,7 +198,8 @@ class HierarchicalKMeansSampler(DataSampler):
             for cluster_idx in range(K):
                 # Get points assigned to this cluster
                 cluster_points = np.where(cluster_model.labels_ == cluster_idx)[0]
-                
+                if cluster_points.shape[0] == 0:
+                    continue
                 # Find the point closest to the centroid
                 closest_point_idx = cluster_points[
                     np.argmin(distances[cluster_points, cluster_idx])

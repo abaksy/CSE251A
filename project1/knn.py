@@ -1,5 +1,6 @@
 from typing import List
 import numpy as np
+from sklearn.metrics.pairwise import euclidean_distances
 
 class KNearestNeighbours:
     '''
@@ -13,15 +14,6 @@ class KNearestNeighbours:
         self.k = k
         self.train_imgs = None
         self.train_labels = None
-       
-    def distance(self, x1, x2):
-        '''
-        Return Euclidean disance between x1 and x2
-
-        Arguments:
-        `x1`, `x2`: Arrays of type `np.array`
-        '''
-        return np.linalg.norm(x1 - x2)
 
     def fit(self, train_imgs: List, train_labels: List):
         '''
@@ -37,29 +29,20 @@ class KNearestNeighbours:
         Arguments:
         `test_instance`: A single instance, represented by an `np.array` of size 28x28
         '''
-        min_dist = 100000000000
-        test_label = -1
-        for img, label in zip(self.train_imgs, self.train_labels):
-            # if not np.array_equal(test_instance, img):
-            dist = self.distance(test_instance, img)
-            if dist < min_dist:
-                min_dist = dist
-                test_label = label
-        
-        return (test_label, min_dist)
+        dists = euclidean_distances(np.reshape(test_instance, (1, -1)), self.train_imgs)
+        min_idx = np.argmin(dists)
+        return self.train_labels[min_idx]
 
     def predict(self, test_imgs):
         '''
         Predict the label of all the images in `test_imgs` using KNN classification
 
         Arguments:
-        `test_imgs`: A `list` of `np.array`s of size 28 x 28
+        `test_imgs`: A `list` of `np.array`s of size (784,)
         '''
-        labels = list()
-        for i, sample in enumerate(test_imgs):
-            label, _ = self.predict_instance(sample)
-            labels.append(label)
-        return labels
+        dists = euclidean_distances(test_imgs, self.train_imgs)
+        min_idx = np.argmin(dists, axis=1)
+        return self.train_labels[min_idx]
     
     def accuracy(self, test_labels, true_labels):
         '''

@@ -7,6 +7,7 @@ import json
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from concurrent.futures import ThreadPoolExecutor
 
 
 class TestBench:
@@ -17,42 +18,34 @@ class TestBench:
         self.plots_dir = "plots"
         self.file_name = f"{self.sampler.name}_{self.sampler.M}"
 
-    def sample_train_test_pipeline(self, x_train, y_train, x_test, y_test):
+    def sample_train_test_pipeline(self, iter, x_train, y_train, x_test, y_test):
         """
         Executes one iteration of the sample->train->test pipeline
 
         Warning: this method should be accessed from the `run_pipeline` method only,
         DO NOT call this directly
         """
+        print("Running trial:", iter)
         if self.sampler is not None:
             x_train_sample, y_train_sample = self.sampler.sample_data(x_train, y_train)
         else:
             x_train_sample = x_train
             y_train_sample = y_train
-            print(
-                "Warning: sampler is None, using entire train set for classification!"
-            )
 
         if self.clf is not None:
             self.clf.fit(x_train_sample, y_train_sample)
-            start = time.perf_counter()
             y_hat = self.clf.predict(x_test)
-            end = time.perf_counter()
-
             acc = self.clf.accuracy(y_hat, y_test)
-            time_taken = end - start
 
         else:
             acc = 0.0
-            time_taken = 0.0
-            print("Warning: model is None, not running classifier!")
-        return acc, time_taken
+        return acc
 
     def calculate_summary_stats(self, results: list, ci=0.95):
         """
         Return summary statistics from the accuracy metrics
         """
-        results = np.array(results)[:, 0]
+        results = np.array(results)
         mean = np.mean(results)
         stdev = np.std(results)
 
@@ -128,13 +121,9 @@ class TestBench:
         Run the entire sample->train->test pipeline `N` times,
         returning the accuracy and time taken for inference on the test set
         """
-        results = list()
-        for i in range(N):
-            print(f"running iteration {i+1} of model....")
-            acc, time_taken = self.sample_train_test_pipeline(
-                x_train, y_train, x_test, y_test
-            )
-            results.append((acc, time_taken))
+        results = [self.sample_train_test_pipeline(i,
+                    x_train, y_train, x_test, y_test
+                ) for i in range(N)]
 
         statistics = self.calculate_summary_stats(results)
         statistics["iters"] = N
