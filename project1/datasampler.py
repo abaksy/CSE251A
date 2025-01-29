@@ -1,8 +1,7 @@
 from abc import abstractmethod, ABC
 import random
 from collections import Counter
-from sklearn.cluster import MiniBatchKMeans
-from sklearn.model_selection import StratifiedKFold
+from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
 
@@ -144,7 +143,7 @@ class KMeansSampler(DataSampler):
 
         x_train = np.array(x_train)
         y_train = np.array(y_train)
-        cluster_model = MiniBatchKMeans(n_clusters=self.M, batch_size=4096)
+        cluster_model = KMeans(n_clusters=self.M)
 
         cluster_model.fit(x_train, y_train)
         # Get distances from each point to each centroid
@@ -193,7 +192,7 @@ class HierarchicalKMeansSampler(DataSampler):
             y = y_train[indices]
 
             K = self.M // n_classes
-            cluster_model = MiniBatchKMeans(K)
+            cluster_model = KMeans(K)
             cluster_model.fit(x, y)
 
             sampled_indices = []
@@ -257,7 +256,7 @@ class StratifiedKMeansSampler(DataSampler):
             y = y_train[indices]
 
             K = sample_freq[c]
-            cluster_model = MiniBatchKMeans(K)
+            cluster_model = KMeans(K)
             cluster_model.fit(x, y)
 
             sampled_indices = []
