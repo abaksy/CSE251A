@@ -28,9 +28,9 @@ class MNISTDataLoader:
         self.test_labels_path = test_labels_path
 
     def read_images_labels(self, images_filepath, labels_filepath):
-        '''
+        """
         Read images and labels and return as arrays
-        '''
+        """
         labels = list()
         with open(labels_filepath, "rb") as file:
             magic, size = struct.unpack(">II", file.read(8))
@@ -49,7 +49,7 @@ class MNISTDataLoader:
             image_data = array("B", file.read())
         images = []
         for i in range(size):
-            images.append(np.zeros(rows*cols))
+            images.append(np.zeros(rows * cols))
         for i in range(size):
             img = np.array(image_data[i * rows * cols : (i + 1) * rows * cols])
             images[i][:] = img
@@ -57,9 +57,9 @@ class MNISTDataLoader:
         return images, labels
 
     def read_data(self):
-        '''
+        """
         Public method to read MNIST data and return both train and test sets as arrays
-        '''
+        """
         (train_imgs, train_labels) = self.read_images_labels(
             self.train_imgs_path, self.train_labels_path
         )

@@ -4,23 +4,35 @@ from datasampler import *
 import os
 from testbench import TestBench
 
-if __name__ == '__main__':
-    base_path = 'dataset'
-    training_images_filepath = os.path.join(base_path, 'train-images-idx3-ubyte/train-images-idx3-ubyte')
-    training_labels_filepath = os.path.join(base_path, 'train-labels-idx1-ubyte/train-labels-idx1-ubyte')
-    test_images_filepath = os.path.join(base_path, 't10k-images-idx3-ubyte/t10k-images-idx3-ubyte')
-    test_labels_filepath = os.path.join(base_path, 't10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte')
+if __name__ == "__main__":
+    base_path = "dataset"
+    training_images_filepath = os.path.join(
+        base_path, "train-images-idx3-ubyte/train-images-idx3-ubyte"
+    )
+    training_labels_filepath = os.path.join(
+        base_path, "train-labels-idx1-ubyte/train-labels-idx1-ubyte"
+    )
+    test_images_filepath = os.path.join(
+        base_path, "t10k-images-idx3-ubyte/t10k-images-idx3-ubyte"
+    )
+    test_labels_filepath = os.path.join(
+        base_path, "t10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte"
+    )
 
-
-    data_loader = MNISTDataLoader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
+    data_loader = MNISTDataLoader(
+        training_images_filepath,
+        training_labels_filepath,
+        test_images_filepath,
+        test_labels_filepath,
+    )
 
     (x_train, y_train), (x_test, y_test) = data_loader.read_data()
     print(x_train[0].shape, y_train[0])
 
     model = KNearestNeighbours(1)
 
-    Ms = [ 5000, 10000, 20000, 30000]
-    samplers = [HierarchicalKMeansSampler] #, HierarchicalKMeansSampler]
+    Ms = [1000, 5000, 10000, 20000, 30000]
+    samplers = [StratifiedKMeansSampler]  # , HierarchicalKMeansSampler]
 
     for sampler in samplers:
         for M in Ms:

@@ -2,8 +2,10 @@ from abc import abstractmethod, ABC
 import random
 from collections import Counter
 from sklearn.cluster import MiniBatchKMeans
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
+
 
 class DataSampler(ABC):
     """
@@ -42,7 +44,7 @@ class RandomSampler(DataSampler):
 
         x_train = np.array(x_train)
         y_train = np.array(y_train)
-        indices = np.random.choice(x_train.shape[0], self.M, replace=False)  
+        indices = np.random.choice(x_train.shape[0], self.M, replace=False)
         x_train_samples = x_train[indices]
         y_train_samples = y_train[indices]
         return (x_train_samples, y_train_samples)
@@ -73,13 +75,13 @@ class RandomClassSampler(DataSampler):
 
         x_train_samples = list()
         y_train_samples = list()
-        
+
         for cl in classes:
             class_idx = np.where(y_train == cl)
             x = x_train[class_idx]
             y = y_train[class_idx]
 
-            sample_idx = np.random.choice(x.shape[0], self.M//N, replace=False)
+            sample_idx = np.random.choice(x.shape[0], self.M // N, replace=False)
             x_train_samples.append(x[sample_idx])
             y_train_samples.append(y[sample_idx])
 
@@ -115,10 +117,10 @@ class ProportionalRandomClassSampler(DataSampler):
             difference = self.M - num_samples
             most_frequent_class = max(dataset_freq.items(), key=lambda x: x[1])[0]
             sample_freq[most_frequent_class] += difference
-        
+
         x_train_samples = list()
         y_train_samples = list()
-        
+
         for cl in classes:
             class_idx = np.where(y_train == cl)
             x = x_train[class_idx]
@@ -135,7 +137,7 @@ class KMeansSampler(DataSampler):
     def __init__(self, M: int):
         super().__init__(M)
         self.name = "KMeansSampler"
-    
+
     def sample_data(self, x_train: list, y_train: list):
         assert len(x_train) == len(y_train)
         assert self.M <= len(x_train)
@@ -147,7 +149,7 @@ class KMeansSampler(DataSampler):
         cluster_model.fit(x_train, y_train)
         # Get distances from each point to each centroid
         distances = euclidean_distances(x_train, cluster_model.cluster_centers_)
-        
+
         # For each cluster, find the point closest to its centroid
         sampled_indices = []
         for cluster_idx in range(self.M):
@@ -160,11 +162,12 @@ class KMeansSampler(DataSampler):
                 np.argmin(distances[cluster_points, cluster_idx])
             ]
             sampled_indices.append(closest_point_idx)
-        
+
         # Convert to numpy array for easier indexing
         sampled_indices = np.array(sampled_indices)
-        
+
         return x_train[sampled_indices], y_train[sampled_indices]
+
 
 class HierarchicalKMeansSampler(DataSampler):
     def __init__(self, M: int):
@@ -188,11 +191,11 @@ class HierarchicalKMeansSampler(DataSampler):
             indices = np.where(y_train == c)
             x = x_train[indices]
             y = y_train[indices]
-            
-            K = self.M//n_classes
+
+            K = self.M // n_classes
             cluster_model = MiniBatchKMeans(K)
             cluster_model.fit(x, y)
-            
+
             sampled_indices = []
             distances = euclidean_distances(x, cluster_model.cluster_centers_)
             for cluster_idx in range(K):
@@ -205,12 +208,74 @@ class HierarchicalKMeansSampler(DataSampler):
                     np.argmin(distances[cluster_points, cluster_idx])
                 ]
                 sampled_indices.append(closest_point_idx)
-            
+
             # Convert to numpy array for easier indexing
             sampled_indices = np.array(sampled_indices)
             x_samples.append(x[sampled_indices])
             y_samples.append(y[sampled_indices])
-            
+
         return np.concatenate(x_samples), np.concatenate(y_samples)
 
 
+class StratifiedKMeansSampler(DataSampler):
+    """
+    Split the dataset into 5 parts, each part has prop number of samples of all classes
+
+    From each part, sample M/5 samples using k means
+    """
+
+    def __init__(self, M):
+        super().__init__(M)
+        self.name = "StratifiedKMeansSampler"
+
+    def sample_data(self, x_train, y_train):
+        assert len(x_train) == len(y_train)
+        assert self.M <= len(x_train)
+
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+
+        classes = set(y_train)
+
+        x_samples = list()
+        y_samples = list()
+
+        dataset_freq = Counter(y_train)
+        sample_freq = {
+            c: round((dataset_freq[c] / len(y_train)) * self.M) for c in dataset_freq
+        }
+        num_samples = sum(sample_freq.values())
+
+        if num_samples < self.M:
+            difference = self.M - num_samples
+            most_frequent_class = max(dataset_freq.items(), key=lambda x: x[1])[0]
+            sample_freq[most_frequent_class] += difference
+
+        for c in classes:
+            indices = np.where(y_train == c)
+            x = x_train[indices]
+            y = y_train[indices]
+
+            K = sample_freq[c]
+            cluster_model = MiniBatchKMeans(K)
+            cluster_model.fit(x, y)
+
+            sampled_indices = []
+            distances = euclidean_distances(x, cluster_model.cluster_centers_)
+            for cluster_idx in range(K):
+                # Get points assigned to this cluster
+                cluster_points = np.where(cluster_model.labels_ == cluster_idx)[0]
+                if cluster_points.shape[0] == 0:
+                    continue
+                # Find the point closest to the centroid
+                closest_point_idx = cluster_points[
+                    np.argmin(distances[cluster_points, cluster_idx])
+                ]
+                sampled_indices.append(closest_point_idx)
+
+            # Convert to numpy array for easier indexing
+            sampled_indices = np.array(sampled_indices)
+            x_samples.append(x[sampled_indices])
+            y_samples.append(y[sampled_indices])
+
+        return np.concatenate(x_samples), np.concatenate(y_samples)

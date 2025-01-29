@@ -7,7 +7,6 @@ import json
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-from concurrent.futures import ThreadPoolExecutor
 
 
 class TestBench:
@@ -31,6 +30,7 @@ class TestBench:
         else:
             x_train_sample = x_train
             y_train_sample = y_train
+        # print(x_train_sample.shape, y_train_sample.shape)
 
         if self.clf is not None:
             self.clf.fit(x_train_sample, y_train_sample)
@@ -73,31 +73,31 @@ class TestBench:
         if not os.path.exists(self.plots_dir):
             os.makedirs(self.plots_dir)
 
-        results = statistics['data']
-        ci_lower = statistics['ci_lower']
-        ci_upper = statistics['ci_upper']
-        c_level = statistics['confidence_level']
-        N = statistics['iters']
+        results = statistics["data"]
+        ci_lower = statistics["ci_lower"]
+        ci_upper = statistics["ci_upper"]
+        c_level = statistics["confidence_level"]
+        N = statistics["iters"]
         # Create visualization
         plt.figure(figsize=(10, 6))
-        
+
         # Create box plot
-        sns.boxplot(data=results, color='lightblue')
-        
+        sns.boxplot(data=results, color="lightblue")
+
         # Add individual points
-        sns.swarmplot(data=results, color='navy', alpha=0.5)
-        
+        sns.swarmplot(data=results, color="navy", alpha=0.5)
+
         # Add confidence interval
-        plt.axhline(y=ci_lower, color='r', linestyle='--', alpha=0.5)
-        plt.axhline(y=ci_upper, color='r', linestyle='--', alpha=0.5)
-        
+        plt.axhline(y=ci_lower, color="r", linestyle="--", alpha=0.5)
+        plt.axhline(y=ci_upper, color="r", linestyle="--", alpha=0.5)
+
         # Customize plot
         # plt.title(f'Accuracy Distribution over {N} trials - \n{c_level*100}% Confidence Interval')
-        plt.ylabel('Accuracy')
-        
+        plt.ylabel("Accuracy")
+
         # Add grid for better readability
-        plt.grid(True, axis='y', linestyle='--', alpha=0.3)
-        
+        plt.grid(True, axis="y", linestyle="--", alpha=0.3)
+
         # Tight layout to prevent label cutoff
         plt.tight_layout()
 
@@ -121,9 +121,10 @@ class TestBench:
         Run the entire sample->train->test pipeline `N` times,
         returning the accuracy and time taken for inference on the test set
         """
-        results = [self.sample_train_test_pipeline(i,
-                    x_train, y_train, x_test, y_test
-                ) for i in range(N)]
+        results = [
+            self.sample_train_test_pipeline(i, x_train, y_train, x_test, y_test)
+            for i in range(N)
+        ]
 
         statistics = self.calculate_summary_stats(results)
         statistics["iters"] = N
