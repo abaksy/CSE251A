@@ -1,6 +1,5 @@
 from datasampler import DataSampler
-from knn import KNearestNeighbours
-import time
+from knn import NearestNeighbours
 import numpy as np
 from scipy import stats
 import json
@@ -10,7 +9,7 @@ import seaborn as sns
 
 
 class TestBench:
-    def __init__(self, clf: KNearestNeighbours = None, sampler: DataSampler = None):
+    def __init__(self, clf: NearestNeighbours = None, sampler: DataSampler = None):
         self.clf = clf
         self.sampler = sampler
         self.result_dir = "results"

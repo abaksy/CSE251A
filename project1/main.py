@@ -1,5 +1,5 @@
 from dataloader import MNISTDataLoader
-from knn import KNearestNeighbours
+from knn import NearestNeighbours
 from datasampler import *
 import os
 from testbench import TestBench
@@ -29,10 +29,17 @@ if __name__ == "__main__":
     (x_train, y_train), (x_test, y_test) = data_loader.read_data()
     print(x_train[0].shape, y_train[0])
 
-    model = KNearestNeighbours(1)
+    model = NearestNeighbours()
 
     Ms = [1000, 5000, 10000, 20000, 30000]
-    samplers = [StratifiedKMeansSampler]  # , HierarchicalKMeansSampler]
+    samplers = [
+        RandomSampler,]
+    #     RandomClassSampler,
+    #     ProportionalRandomClassSampler,
+    #     KMeansSampler,
+    #     HierarchicalKMeansSampler,
+    #     StratifiedKMeansSampler,
+    # ]
 
     for sampler in samplers:
         for M in Ms:

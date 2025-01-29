@@ -3,17 +3,13 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 
 
-class KNearestNeighbours:
+class NearestNeighbours:
     """
-    Implements K-Nearest neighbours algorithm
-
-    Arguments:
-
-    `k`: Number of nearest neighbours to consider when classifying a new instance
+    Implements 1-Nearest neighbours algorithm
     """
 
-    def __init__(self, k: int = 1):
-        self.k = k
+    def __init__(self):
+        self.k = 1
         self.train_imgs = None
         self.train_labels = None
 
@@ -23,17 +19,6 @@ class KNearestNeighbours:
         """
         self.train_imgs = train_imgs
         self.train_labels = train_labels
-
-    def predict_instance(self, test_instance):
-        """
-        For a single test instance, return its label by getting the nearest neighbours and computing the label
-
-        Arguments:
-        `test_instance`: A single instance, represented by an `np.array` of size 28x28
-        """
-        dists = euclidean_distances(np.reshape(test_instance, (1, -1)), self.train_imgs)
-        min_idx = np.argmin(dists)
-        return self.train_labels[min_idx]
 
     def predict(self, test_imgs):
         """
