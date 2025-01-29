@@ -41,8 +41,16 @@ Execute the sampling and inference pipeline using
 python main.py
 ```
 
+Inspect the results in the ```results``` and ```plots``` directories.
+
 ## Code Structure
 
 ```main.py``` is the entry point of the entire project. It runs the entire sampling and inference pipeline
 
-```testbench.py``` contains code that executes the pipeline in sequence, given a KNea
+```dataloader.py``` implements logic to load the MNIST dataset to memory as a NumPy array of arrays, each being of size ```(784,)```.
+
+```testbench.py``` contains code that executes the pipeline in sequence, given a ```NearestNeighbours``` classifier and a ```DataSampler```.
+
+```knn.py``` implements the logic of a 1-nearest neighbours classifier, and implements methods to predict labels for the unseen test set
+
+```datasampler.py``` implements the ```DataSampler``` abstract base class, and its derived classes. All the derived classes must take the reduced sample size $M$ as a constructor argument, and implement the ```sample_data``` method that returns the reduced dataset as a tuple of ```(x_train, y_train)```
