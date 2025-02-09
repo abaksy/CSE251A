@@ -7,6 +7,7 @@ ZIP_PATH = f"{DATASET_DIR}/wine.zip"
 DATA_PATH = f"{DATASET_DIR}/wine.data"
 
 COL_NAMES = [
+    "label",
     "alc",
     "malic_acid",
     "ash",

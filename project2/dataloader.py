@@ -3,14 +3,16 @@ import zipfile
 import os
 import pandas as pd
 from constants import COL_NAMES
+from sklearn.preprocessing import StandardScaler
 
 
 class WineDataLoader:
-    def __init__(self, dataset_url, dataset_dir="dataset"):
+    def __init__(self, dataset_url, dataset_dir="dataset", scale=True):
         self.dataset_url = dataset_url
         self.dataset_dir = dataset_dir
         self.zip_path = f"{self.dataset_dir}/wine.zip"
         self.datafile_path = f"{self.dataset_dir}/wine.data"
+        self.scale = scale
 
     def download_file(self):
         # NOTE the stream=True parameter
@@ -24,6 +26,15 @@ class WineDataLoader:
     def extract_file(self):
         with zipfile.ZipFile(self.zip_path, "r") as zip_ref:
             zip_ref.extractall(f"{self.dataset_dir}/")
+    
+    def scale_data(self, df):
+        '''
+        Scale columns of df and return it
+        '''
+        scaler = StandardScaler()
+        df[COL_NAMES[1:]] = scaler.fit_transform(df[COL_NAMES[1:]])
+        return df
+
 
     def load_data(self):
         os.makedirs(self.dataset_dir, exist_ok=True)
@@ -37,4 +48,9 @@ class WineDataLoader:
                 zip_ref.extractall(f"{self.dataset_dir}/")
 
         df = pd.read_csv(self.datafile_path, header=None, names=COL_NAMES)
+
+        # Filter first two classes from dataset
+        df = df[df["label"].isin([1, 2])]
+        if self.scale:
+            df = self.scale_data(df)
         return df
