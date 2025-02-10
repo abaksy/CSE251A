@@ -2,6 +2,7 @@ import requests
 import zipfile
 import os
 import pandas as pd
+import numpy as np
 from constants import COL_NAMES
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -10,7 +11,7 @@ from sklearn.model_selection import train_test_split
 class WineDataLoader:
     def __init__(self, dataset_url, dataset_dir="dataset", train=0.75, scale=True):
         assert train < 1
-        
+
         self.dataset_url = dataset_url
         self.dataset_dir = dataset_dir
         self.zip_path = f"{self.dataset_dir}/wine.zip"
@@ -30,15 +31,14 @@ class WineDataLoader:
     def extract_file(self):
         with zipfile.ZipFile(self.zip_path, "r") as zip_ref:
             zip_ref.extractall(f"{self.dataset_dir}/")
-    
+
     def scale_data(self, df):
-        '''
+        """
         Scale columns of df and return it
-        '''
+        """
         scaler = StandardScaler()
         df[COL_NAMES[1:]] = scaler.fit_transform(df[COL_NAMES[1:]])
         return df
-
 
     def load_data(self):
         os.makedirs(self.dataset_dir, exist_ok=True)
@@ -63,10 +63,9 @@ class WineDataLoader:
         if self.scale:
             df = self.scale_data(df)
 
-        # Split the dataset into train and test
-        df_train, df_test = train_test_split(
-            df, test_size=1 - self.train_ratio, random_state=42
-        )
-        return df_train, df_test
+        N = df.shape[0]
+        print(df.iloc[:, 1:].to_numpy().shape)
+        X = np.hstack((np.ones(N).reshape(-1, 1), df.iloc[:, 1:].to_numpy()))
+        y = df["label"]
 
-
+        return X, y

@@ -1,8 +1,28 @@
 from dataloader import WineDataLoader
 from constants import *
+import logging
+import sys
+from baseline import BaselineModel
 
-loader = WineDataLoader(DATASET_URL, DATASET_DIR, train=0.8, scale=False)
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
 
-df_train, df_test = loader.load_data()
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+root.addHandler(handler)
 
-print(df_train.shape, df_test.shape)
+loader = WineDataLoader(DATASET_URL, DATASET_DIR, train=0.8, scale=True)
+
+X_train, y_train = loader.load_data()
+
+print(X_train.shape, y_train.shape)
+
+root.info("Training standard LogisticRegression Model")
+
+baseline = BaselineModel()
+
+L_star = baseline.fit(X_train, y_train)
+
+root.info(f"Baseline Model - Loss: {L_star}")

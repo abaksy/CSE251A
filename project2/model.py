@@ -13,7 +13,7 @@ class LogisticRegression:
         """
 
         self.d = df_train.shape[-1]
-        self.w = np.zeros(self.d + 1)
+        self.w = np.random.rand(self.d + 1)
         self.n_train = df_train.shape[0]
         self.X_train = np.hstack(np.ones(self.n_train), df_train.iloc[:, 1:].to_numpy())
         self.y_train = df_train.iloc[:, 0].to_numpy()
@@ -24,9 +24,13 @@ class LogisticRegression:
         """
         Compute cross-entropy loss and return
         """
-        p_i = 1/(1 + np.exp(-self.X_train @ self.w))
-        cross_entropy = -np.sum(self.y_train * np.log(p_i) + (1 - self.y_train) * np.log(1 - p_i))
+        p_i = 1 / (1 + np.exp(-self.X_train @ self.w))
+        cross_entropy = -np.sum(
+            self.y_train * np.log(p_i) + (1 - self.y_train) * np.log(1 - p_i)
+        )
         return cross_entropy
 
-
-        
+    def update_weights(self):
+        """
+        Update weights using co-ordinate descent
+        """
