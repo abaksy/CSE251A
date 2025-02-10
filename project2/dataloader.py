@@ -4,14 +4,18 @@ import os
 import pandas as pd
 from constants import COL_NAMES
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
 
 class WineDataLoader:
-    def __init__(self, dataset_url, dataset_dir="dataset", scale=True):
+    def __init__(self, dataset_url, dataset_dir="dataset", train=0.75, scale=True):
+        assert train < 1
+        
         self.dataset_url = dataset_url
         self.dataset_dir = dataset_dir
         self.zip_path = f"{self.dataset_dir}/wine.zip"
         self.datafile_path = f"{self.dataset_dir}/wine.data"
+        self.train_ratio = train
         self.scale = scale
 
     def download_file(self):
@@ -51,6 +55,18 @@ class WineDataLoader:
 
         # Filter first two classes from dataset
         df = df[df["label"].isin([1, 2])]
+
+        # replace 2 with 0 in label column
+        df["label"] = df["label"].replace(2, 0)
+
+        # Normalize features of the dataset
         if self.scale:
             df = self.scale_data(df)
-        return df
+
+        # Split the dataset into train and test
+        df_train, df_test = train_test_split(
+            df, test_size=1 - self.train_ratio, random_state=42
+        )
+        return df_train, df_test
+
+
