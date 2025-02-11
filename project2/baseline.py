@@ -8,10 +8,7 @@ class BaselineModel:
             random_state=42,
             penalty=None,
             max_iter=100,
-            n_jobs=-1,
-            warm_start=True,
-            class_weight="balanced",
-            verbose=1,
+            n_jobs=-1
         )
 
     def fit(self, X_train, y_train):
