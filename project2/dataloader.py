@@ -5,16 +5,17 @@ import pandas as pd
 import numpy as np
 from constants import COL_NAMES
 from sklearn.preprocessing import StandardScaler
-
+from sklearn.model_selection import train_test_split
 
 class WineDataLoader:
-    def __init__(self, dataset_url, dataset_dir="dataset", scale=True):
+    def __init__(self, dataset_url, dataset_dir="dataset", scale=True, test_ratio=0.2):
 
         self.dataset_url = dataset_url
         self.dataset_dir = dataset_dir
         self.zip_path = f"{self.dataset_dir}/wine.zip"
         self.datafile_path = f"{self.dataset_dir}/wine.data"
         self.scale = scale
+        self.test_ratio = test_ratio
 
     def download_file(self):
         # NOTE the stream=True parameter
@@ -62,10 +63,17 @@ class WineDataLoader:
         
         # Shuffle rows to avoid 1 and 0 examples being clustered together
         df = df.sample(frac=1).reset_index(drop=True)
+        
+        df_train, df_test = train_test_split(df, test_size=self.test_ratio, random_state=42)
 
-        N = df.shape[0]
-        print(df.iloc[:, 1:].to_numpy().shape)
-        X = np.hstack((np.ones(N).reshape(-1, 1), df.iloc[:, 1:].to_numpy()))
-        y = df["label"]
+        print(df_train.shape, df_test.shape)
 
-        return X, y
+        N = df_train.shape[0]
+        X_train = np.hstack((np.ones(N).reshape(-1, 1), df_train.iloc[:, 1:].to_numpy()))
+        y_train = df_train["label"]
+
+        N = df_test.shape[0]
+        X_test = np.hstack((np.ones(N).reshape(-1, 1), df_test.iloc[:, 1:].to_numpy()))
+        y_test = df_test["label"]
+
+        return X_train, y_train, X_test, y_test
