@@ -3,7 +3,8 @@ from constants import *
 import logging
 import sys
 from baseline import BaselineModel
-from model import RandomFeatureModel, CustomModel
+from model import RandomFeatureModel, CustomModel, CustomModel2
+import matplotlib.pyplot as plt
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -30,10 +31,24 @@ root.info("Method: Custom Model")
 
 model = CustomModel(X_train, y_train, X_test, y_test, root, n_iter=50)
 
-model.learn()
+l1 = model.learn()
 
 root.info("Method: Random Feature")
 
 model = RandomFeatureModel(X_train, y_train, X_test, y_test, root, n_iter=50)
 
-model.learn()
+l2 = model.learn()
+
+model = CustomModel2(X_train, y_train, X_test, y_test, root, n_iter=50)
+
+l3 = model.learn()
+
+plt.plot(l1, label="Gradient-Based Co-Ord Descent")
+plt.plot(l2, label="Random Feature Co-Ord Descent")
+plt.plot(l3, label="Second-order Co-Ord Descent")
+plt.xlabel("Iterations")
+plt.ylabel("Training Loss")
+# Add a dotted line at the value of L_star
+plt.axhline(y=L_star, color="r", linestyle="--", label="L-BFGS Optimizer")
+plt.legend()
+plt.savefig("loss.png", dpi=300)

@@ -58,15 +58,20 @@ class CDLogisticRegressor:
         self.hessian = self.X_train.T @ np.diag(y_hat * (1 - y_hat)) @ self.X_train
 
         idx = self.select_feature()
+
+        # Newton update of co-ordinate
         self.w[idx] -= (np.linalg.inv(self.hessian) @ self.gradients)[idx]
 
     def learn(self):
-        self.logger.info(f"STARTING LOSS: {self.loss(self.X_train, self.y_train)}")
+        losses = [self.loss(self.X_train, self.y_train)]
+        self.logger.info(f"STARTING LOSS: {losses[0]}")
         for i in range(self.n_iter):
             self.update_weights()
             loss = self.loss(self.X_train, self.y_train)
+            losses.append(loss)
             if (i + 1) % 10 == 0:
                 self.logger.info(f"Loss at iteration {i} : {loss}")
+        return losses
 
     def predict(self):
         return np.where(expit(self.X_test @ self.w) >= 0.5, 1, 0)
@@ -112,6 +117,28 @@ class CustomModel(CDLogisticRegressor):
         super().__init__(X_train, y_train, X_test, y_test, logger, n_iter)
 
     def select_feature(self):
+        """
+        Return the index of the feature having the largest absolute value of gradient
+        """
         grads_abs = np.abs(self.gradients)
-        mg_idx = np.argmax(grads_abs)  # Index having the largest gradient
-        return mg_idx
+        return np.argmax(grads_abs)  # Index having the largest gradient
+
+class CustomModel2(CDLogisticRegressor):
+    def __init__(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_test: np.ndarray,
+        y_test: np.ndarray,
+        logger,
+        n_iter,
+    ):
+        super().__init__(X_train, y_train, X_test, y_test, logger, n_iter)
+
+    def select_feature(self):
+        """
+        Return the index of the feature having the largest absolute value of gradient
+        """
+        grads_abs = np.abs(self.gradients)
+        H_jj = np.diag(self.hessian)
+        return np.argmax(grads_abs / 2*H_jj) # Index having the largest gradient
