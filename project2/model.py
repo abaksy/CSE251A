@@ -16,7 +16,9 @@ class CDLogisticRegressor:
         X_test: np.ndarray,
         y_test: np.ndarray,
         logger: Logger,
+        alpha: float = 0.5,
         n_iter: int = 100,
+        wt_update: str = "newton",
     ):
         """
         Implement logistic regression using co-ordinate descent to optimize the loss
@@ -28,9 +30,10 @@ class CDLogisticRegressor:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
-        self.alpha = 0.5
         self.logger = logger
+        self.alpha = alpha
         self.n_iter = n_iter
+        self.wt_update = wt_update
 
     def loss(self, X, y) -> float:
         """
@@ -60,7 +63,11 @@ class CDLogisticRegressor:
         idx = self.select_feature()
 
         # Newton update of co-ordinate
-        self.w[idx] -= (np.linalg.inv(self.hessian) @ self.gradients)[idx]
+        if self.wt_update == "newton":
+            self.w[idx] -=  (np.linalg.inv(self.hessian) @ self.gradients)[idx]
+        elif self.wt_update == "gd":
+            self.logger.info(f"Using alpha= {self.alpha}")
+            self.w[idx] -= self.alpha * self.gradients[idx]
 
     def learn(self):
         losses = [self.loss(self.X_train, self.y_train)]
@@ -94,11 +101,13 @@ class RandomFeatureModel(CDLogisticRegressor):
         y_test: np.ndarray,
         logger: Logger,
         n_iter: int = 100,
+        wt_update: str = "newton",
+        alpha: float = 0.5,
     ):
         """
         Implement logistic regression using co-ordinate descent to optimize the loss
         """
-        super().__init__(X_train, y_train, X_test, y_test, logger, n_iter)
+        super().__init__(X_train, y_train, X_test, y_test, logger, alpha=alpha, n_iter=n_iter, wt_update=wt_update)
 
     def select_feature(self):
         return np.random.randint(0, self.d)
@@ -111,10 +120,12 @@ class CustomModel(CDLogisticRegressor):
         y_train: np.ndarray,
         X_test: np.ndarray,
         y_test: np.ndarray,
-        logger,
-        n_iter,
+        logger: Logger,
+        n_iter: int,
+        wt_update: str,
+        alpha: float = 0.5,
     ):
-        super().__init__(X_train, y_train, X_test, y_test, logger, n_iter)
+        super().__init__(X_train, y_train, X_test, y_test, logger, alpha=alpha, n_iter=n_iter, wt_update=wt_update)
 
     def select_feature(self):
         """
@@ -122,23 +133,3 @@ class CustomModel(CDLogisticRegressor):
         """
         grads_abs = np.abs(self.gradients)
         return np.argmax(grads_abs)  # Index having the largest gradient
-
-class CustomModel2(CDLogisticRegressor):
-    def __init__(
-        self,
-        X_train: np.ndarray,
-        y_train: np.ndarray,
-        X_test: np.ndarray,
-        y_test: np.ndarray,
-        logger,
-        n_iter,
-    ):
-        super().__init__(X_train, y_train, X_test, y_test, logger, n_iter)
-
-    def select_feature(self):
-        """
-        Return the index of the feature having the largest absolute value of gradient
-        """
-        grads_abs = np.abs(self.gradients)
-        H_jj = np.diag(self.hessian)
-        return np.argmax(grads_abs / 2*H_jj) # Index having the largest gradient
