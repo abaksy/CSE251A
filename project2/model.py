@@ -1,8 +1,34 @@
 import numpy as np
 from logging import Logger
 from scipy.special import expit
+from scipy import sparse
 from sklearn.metrics import log_loss
 
+def calculate_stable_hessian(X, y_hat, eps=1e-15):
+    # Clip probabilities to prevent numerical instability
+    y_hat_clipped = np.clip(y_hat, eps, 1 - eps)
+    
+    # Calculate weights (diagonal terms)
+    weights = y_hat_clipped * (1 - y_hat_clipped)
+    
+    # Ensure weights are positive and not too close to zero
+    weights = np.maximum(weights, eps)
+    
+    # Method 1: Using np.einsum for better numerical precision
+    hessian = np.einsum('ji,j,jk->ik', X, weights, X)
+    
+    # Alternative Method 2: Using sparse diagonal matrix if data is large
+    
+    W = sparse.diags(weights, format='csr')
+    hessian = X.T @ W @ X
+    
+    return hessian
+
+# Example usage:
+"""
+# Assuming X_train and y_hat are your training data and predictions:
+hessian = calculate_stable_hessian(X_train, y_hat)
+"""
 
 class CDLogisticRegressor:
     """
@@ -13,23 +39,20 @@ class CDLogisticRegressor:
         self,
         X_train: np.ndarray,
         y_train: np.ndarray,
-        X_test: np.ndarray,
-        y_test: np.ndarray,
         logger: Logger,
         alpha: float = 0.5,
         n_iter: int = 100,
         wt_update: str = "newton",
+        seed:int = 42
     ):
         """
         Implement logistic regression using co-ordinate descent to optimize the loss
         """
-        np.random.seed(42)
+        np.random.seed(seed)
         self.d = X_train.shape[-1]  # dimensionality of the model
         self.w = np.random.normal(0, 0.1, self.d)
         self.X_train = X_train
         self.y_train = y_train
-        self.X_test = X_test
-        self.y_test = y_test
         self.logger = logger
         self.alpha = alpha
         self.n_iter = n_iter
@@ -58,7 +81,7 @@ class CDLogisticRegressor:
         )
         
         # Second order derivative of the loss function
-        self.hessian = self.X_train.T @ np.diag(y_hat * (1 - y_hat)) @ self.X_train
+        self.hessian = calculate_stable_hessian(self.X_train, y_hat) 
 
         idx = self.select_feature()
 
@@ -66,26 +89,17 @@ class CDLogisticRegressor:
         if self.wt_update == "newton":
             self.w[idx] -=  (np.linalg.inv(self.hessian) @ self.gradients)[idx]
         elif self.wt_update == "gd":
-            self.logger.info(f"Using alpha= {self.alpha}")
+            # self.logger.info(f"Using alpha= {self.alpha}")
             self.w[idx] -= self.alpha * self.gradients[idx]
 
     def learn(self):
         losses = [self.loss(self.X_train, self.y_train)]
-        self.logger.info(f"STARTING LOSS: {losses[0]}")
+        # self.logger.info(f"STARTING LOSS: {losses[0]}")
         for i in range(self.n_iter):
             self.update_weights()
             loss = self.loss(self.X_train, self.y_train)
             losses.append(loss)
-            if (i + 1) % 10 == 0:
-                self.logger.info(f"Loss at iteration {i} : {loss}")
         return losses
-
-    def predict(self):
-        return np.where(expit(self.X_test @ self.w) >= 0.5, 1, 0)
-
-    def accuracy(self):
-        y_hat = self.predict()
-        return np.mean(y_hat == self.y_test)
 
 
 class RandomFeatureModel(CDLogisticRegressor):
@@ -97,17 +111,16 @@ class RandomFeatureModel(CDLogisticRegressor):
         self,
         X_train: np.ndarray,
         y_train: np.ndarray,
-        X_test: np.ndarray,
-        y_test: np.ndarray,
         logger: Logger,
         n_iter: int = 100,
         wt_update: str = "newton",
         alpha: float = 0.5,
+        seed: int = 42
     ):
         """
         Implement logistic regression using co-ordinate descent to optimize the loss
         """
-        super().__init__(X_train, y_train, X_test, y_test, logger, alpha=alpha, n_iter=n_iter, wt_update=wt_update)
+        super().__init__(X_train, y_train, logger, alpha=alpha, n_iter=n_iter, wt_update=wt_update, seed=seed)
 
     def select_feature(self):
         return np.random.randint(0, self.d)
@@ -118,14 +131,13 @@ class CustomModel(CDLogisticRegressor):
         self,
         X_train: np.ndarray,
         y_train: np.ndarray,
-        X_test: np.ndarray,
-        y_test: np.ndarray,
         logger: Logger,
         n_iter: int,
         wt_update: str,
         alpha: float = 0.5,
+        seed: int = 42
     ):
-        super().__init__(X_train, y_train, X_test, y_test, logger, alpha=alpha, n_iter=n_iter, wt_update=wt_update)
+        super().__init__(X_train, y_train,logger, alpha=alpha, n_iter=n_iter, wt_update=wt_update, seed=seed)
 
     def select_feature(self):
         """
