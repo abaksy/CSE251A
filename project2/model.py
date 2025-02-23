@@ -4,7 +4,7 @@ from scipy.special import expit
 from scipy import sparse
 from sklearn.metrics import log_loss
 
-def calculate_stable_hessian(X, y_hat, eps=1e-15):
+def calculate_stable_hessian(X, y_hat, eps=1e-10):
     # Clip probabilities to prevent numerical instability
     y_hat_clipped = np.clip(y_hat, eps, 1 - eps)
     
@@ -94,11 +94,19 @@ class CDLogisticRegressor:
 
     def learn(self):
         losses = [self.loss(self.X_train, self.y_train)]
+        patience = 20
+        tol = 1e-10
         # self.logger.info(f"STARTING LOSS: {losses[0]}")
         for i in range(self.n_iter):
             self.update_weights()
             loss = self.loss(self.X_train, self.y_train)
             losses.append(loss)
+            # if len(losses) > patience:
+            #     loss_diff = losses[-patience] - losses[-1]  # Improvement over last patience iterations
+            #     if loss_diff < tol:  # If loss hasn't improved by more than tol
+            #         self.logger.warning(f"Early stopping at iteration {i}, loss improvement over {patience} iterations: {loss_diff:.6f}")
+            #         break
+
         return losses
 
 

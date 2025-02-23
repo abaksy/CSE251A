@@ -6,7 +6,8 @@ from baseline import BaselineModel
 from model import RandomFeatureModel, CustomModel
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
+
+MAX_ITERS = 70
 
 plt.set_loglevel("warning")
 
@@ -44,13 +45,15 @@ seeds = np.random.randint(0, 100, 30)
 for i, tc in enumerate(test_cases):
     plt.figure()
     wt_update, alpha = tc
-    model = CustomModel(X_train, y_train, root, n_iter=100, wt_update=wt_update, alpha=alpha)
+    model = CustomModel(X_train, y_train, root, n_iter=MAX_ITERS, wt_update=wt_update, alpha=alpha)
     l1 = model.learn()
     
     loss_data = list()
     for j in range(30):
-        model = RandomFeatureModel(X_train, y_train, root, n_iter=100, wt_update=wt_update, alpha=alpha, seed=seeds[j])
+        model = RandomFeatureModel(X_train, y_train, root, n_iter=MAX_ITERS, wt_update=wt_update, alpha=alpha, seed=seeds[j])
         l2 = model.learn()
+        if len(l2) < MAX_ITERS + 1:
+            l2 += [l2[-1]] * (MAX_ITERS + 1 - len(l2))
         loss_data.append(l2)
     data = np.array(loss_data)
     
@@ -70,10 +73,10 @@ for i, tc in enumerate(test_cases):
     x = range(len(mean_loss_random))
     
     # Plot mean line
-    plt.plot(x, mean_loss_random, 'b-', label='Mean', linewidth=2)
+    plt.plot(x, mean_loss_random, 'b-', label='Random Feature Co-ordinate Descent (Mean)', linewidth=2)
     
     # Plot confidence interval
-    plt.fill_between(range(101), mean_loss_random - confidence_interval, 
+    plt.fill_between(range(MAX_ITERS + 1), mean_loss_random - confidence_interval, 
                  mean_loss_random + confidence_interval, color='gray', alpha=0.3, label='95% CI')
 
     if wt_update == 'newton':
