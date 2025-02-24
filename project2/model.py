@@ -13,10 +13,6 @@ def calculate_stable_hessian(X, y_hat, eps=1e-10):
     
     # Ensure weights are positive and not too close to zero
     weights = np.maximum(weights, eps)
-    
-    # Method 1: Using np.einsum for better numerical precision
-    hessian = np.einsum('ji,j,jk->ik', X, weights, X)
-    
     # Alternative Method 2: Using sparse diagonal matrix if data is large
     
     W = sparse.diags(weights, format='csr')

@@ -21,7 +21,6 @@ handler.setFormatter(formatter)
 root.addHandler(handler)
 
 test_cases = [
-    ('gd', 0.75),
     ('gd', 0.5),
     ('gd', 0.2),
     ('gd', 0.1),
